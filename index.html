@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>氣功 · Qi Gong Quotidien</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#b5892a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Qi Gong">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1a14;
+      --surface: #1a2a1f;
+      --card: #223028;
+      --accent: #b5892a;
+      --accent2: #7aab6e;
+      --text: #e8dfc8;
+      --muted: #8a9e8d;
+      --radius: 14px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 28px 20px 16px;
+      text-align: center;
+      background: linear-gradient(180deg, #0a1510 0%, var(--bg) 100%);
+    }
+
+    header .zh { font-size: 2.2rem; color: var(--accent); letter-spacing: 6px; }
+    header h1 { font-size: 1.1rem; font-weight: 400; color: var(--muted); margin-top: 4px; letter-spacing: 2px; }
+    header .date { font-size: 0.8rem; color: var(--muted); margin-top: 6px; opacity: 0.7; }
+
+    main { flex: 1; padding: 16px 16px 32px; max-width: 520px; margin: 0 auto; width: 100%; }
+
+    .section-title { font-size: 0.72rem; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-bottom: 12px; }
+
+    .categories {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .cat-btn {
+      background: var(--card);
+      border: 1.5px solid transparent;
+      border-radius: var(--radius);
+      padding: 16px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .cat-btn:last-child { grid-column: 1 / -1; }
+
+    .cat-btn .emoji { font-size: 1.8rem; display: block; margin-bottom: 6px; }
+    .cat-btn .label { font-size: 0.85rem; font-weight: 600; display: block; }
+    .cat-btn .sublabel { font-size: 0.7rem; color: var(--muted); display: block; margin-top: 2px; }
+
+    .cat-btn.active {
+      border-color: var(--accent);
+      background: #2a3a22;
+    }
+
+    .cat-btn:active { transform: scale(0.97); }
+
+    .video-section {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+    .video-section.visible { display: block; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .select-wrap {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .select-wrap::after {
+      content: '▾';
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--accent);
+      pointer-events: none;
+      font-size: 1rem;
+    }
+
+    select {
+      width: 100%;
+      background: var(--card);
+      border: 1.5px solid #3a4f3d;
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: 14px 40px 14px 16px;
+      font-size: 0.9rem;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      outline: none;
+    }
+
+    select:focus { border-color: var(--accent); }
+
+    .video-info {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      border-left: 3px solid var(--accent);
+      display: none;
+    }
+    .video-info.visible { display: block; }
+    .video-info .v-title { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+    .video-info .v-desc { font-size: 0.8rem; color: var(--muted); margin-bottom: 8px; }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag {
+      background: #1a3320;
+      color: var(--accent2);
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      border-radius: 20px;
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.95);
+      z-index: 1000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.visible { display: flex; }
+
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: #fff;
+      font-size: 1.5rem;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .modal-close:active { background: rgba(255,255,255,0.2); }
+
+    .modal-title {
+      color: var(--accent);
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-align: center;
+      padding: 0 60px 16px;
+      letter-spacing: 0.5px;
+    }
+
+    .modal-player {
+      position: relative;
+      width: 100%;
+      max-width: 900px;
+      padding-bottom: min(56.25%, 56.25vw);
+    }
+    .modal-player iframe {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      border: none;
+    }
+
+    .end-message {
+      display: none;
+      position: absolute;
+      inset: 0;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 32px;
+      background: rgba(10, 21, 16, 0.97);
+    }
+    .end-message.visible { display: flex; }
+    .end-message .end-zh { font-size: 2rem; color: var(--accent); letter-spacing: 6px; margin-bottom: 16px; }
+    .end-message .end-text {
+      font-size: 1.05rem;
+      color: var(--text);
+      line-height: 1.7;
+      font-style: italic;
+      max-width: 340px;
+    }
+    .end-message .end-sub {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 20px;
+      letter-spacing: 1px;
+    }
+    .end-close {
+      margin-top: 28px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 12px 28px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .play-btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent), #8a6820);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 16px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 12px;
+      letter-spacing: 1px;
+      -webkit-tap-highlight-color: transparent;
+      display: none;
+    }
+    .play-btn.visible { display: block; }
+    .play-btn:active { opacity: 0.85; }
+
+    footer {
+      text-align: center;
+      padding: 12px;
+      font-size: 0.7rem;
+      color: var(--muted);
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="zh">氣功</div>
+  <h1>Entretien Quotidien · Qi Gong</h1>
+  <div class="date" id="dateDisplay"></div>
+</header>
+
+<main>
+  <div class="section-title">Choisissez un moment</div>
+
+  <div class="categories">
+    <button class="cat-btn" data-cat="matin" onclick="selectCat(this)">
+      <span class="emoji">🌅</span>
+      <span class="label">Matin</span>
+      <span class="sublabel">Éveil · Immunité</span>
+    </button>
+    <button class="cat-btn" data-cat="midi" onclick="selectCat(this)">
+      <span class="emoji">☀️</span>
+      <span class="label">Midi</span>
+      <span class="sublabel">Saisons · Méridiens</span>
+    </button>
+    <button class="cat-btn" data-cat="soir" onclick="selectCat(this)">
+      <span class="emoji">🌙</span>
+      <span class="label">Soir</span>
+      <span class="sublabel">Détente · Sommeil</span>
+    </button>
+    <button class="cat-btn" data-cat="massage" onclick="selectCat(this)">
+      <span class="emoji">💆</span>
+      <span class="label">Automassage</span>
+      <span class="sublabel">Visage · Acupression</span>
+    </button>
+    <button class="cat-btn" data-cat="complet" onclick="selectCat(this)">
+      <span class="emoji">⏱</span>
+      <span class="label">Programme Complet</span>
+      <span class="sublabel">35–60 min · Corps entier</span>
+    </button>
+  </div>
+
+  <div class="video-section" id="videoSection">
+    <div class="section-title">Sélectionnez une pratique</div>
+    <div class="select-wrap">
+      <select id="videoSelect" onchange="selectVideo()">
+        <option value="">— Choisir —</option>
+      </select>
+    </div>
+
+    <div class="video-info" id="videoInfo">
+      <div class="v-title" id="vTitle"></div>
+      <div class="v-desc" id="vDesc"></div>
+      <div class="tags" id="vTags"></div>
+    </div>
+
+    <button class="play-btn" id="playBtn" onclick="launchVideo()">▶ Lancer la pratique</button>
+  </div>
+</main>
+
+<div class="modal-overlay" id="modalOverlay">
+  <button class="modal-close" onclick="closeModal()">✕</button>
+  <div class="modal-title" id="modalTitle"></div>
+  <div class="modal-player">
+    <div id="ytPlayer"></div>
+    <div class="end-message" id="endMessage">
+      <div class="end-zh">氣功</div>
+      <div class="end-text">Votre corps vous remercie pour le temps de bien-être que vous lui avez accordé.</div>
+      <div class="end-sub">氣 · Énergie vitale</div>
+      <button class="end-close" onclick="closeModal()">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<footer>氣功 · Médecine Traditionnelle Chinoise</footer>
+
+<script>
+  const DATA = {
+    matin: [
+      { titre: "Système Immunitaire", desc: "Exercices d'éveil et de renforcement immunitaire", duree: "~20 min", focus: "Éveil Yang · Immunité", organes: "Poumons · Wei Qi", niveau: "Débutant", id: "AoGOZ48jM0g" },
+      { titre: "Routine Matinale", desc: "Conscience du corps dans l'instant présent", duree: "~15 min", focus: "Éveil Yang · Corps entier", organes: "Méridiens généraux", niveau: "Débutant", id: "gqWL6FazTko" },
+      { titre: "Routine Matinale 2", desc: "Séquence d'éveil énergétique", duree: "~15 min", focus: "Éveil Yang · Corps entier", organes: "Méridiens Yang · Articulations", niveau: "Débutant", id: "CxBbm7w1Ems" },
+      { titre: "Étirer Colonne & Dos", desc: "Renforcer et étirer la colonne vertébrale", duree: "5 min", focus: "Colonne · Dos supérieur", organes: "Reins · Colonne (Du Mai)", niveau: "Débutant", id: "g9y2-1x1ohg" },
+      { titre: "Ouverture & Nettoyage", desc: "Respiration profonde · Ouverture et purification énergétique", duree: "15 min", focus: "Respiration · Nettoyage énergétique", organes: "Poumons · Triple Réchauffeur", niveau: "Débutant", id: "QNgWb3EDXCI" }
+    ],
+    midi: [
+      { titre: "8 Pièces de Brocart", desc: "Routine complète – étirement général des méridiens", duree: "20 min", focus: "Étirement général · Toutes saisons", organes: "12 méridiens · Corps entier", niveau: "Débutant/Inter.", id: "UpN3AcXLSSk" },
+      { titre: "Nourrir le Cœur", desc: "Été · Élément Feu · Cœur et Intestin Grêle", duree: "~15 min", focus: "Été · Élément Feu", organes: "Cœur · Intestin Grêle", niveau: "Intermédiaire", id: "fjzkIDvgNx4" },
+      { titre: "Étirements & Foie – Printemps", desc: "Qi Gong débutant – Printemps, assouplissements, Foie", duree: "~20 min", focus: "Printemps · Élément Bois", organes: "Foie · Vésicule Biliaire", niveau: "Débutant", id: "dlxPXtZT3f4" },
+      { titre: "Poumons & Bonne Humeur – Automne", desc: "Santé des poumons · Cultiver le bonheur · Immunité", duree: "~20 min", focus: "Automne · Élément Métal", organes: "Poumons · Gros Intestin", niveau: "Débutant", id: "wbwB0KeB54I" },
+      { titre: "Renforcer les Reins – Hiver", desc: "8 mouvements Maître Zhang Guangde pour les Reins", duree: "~20 min", focus: "Hiver · Élément Eau", organes: "Reins · Vessie", niveau: "Débutant", id: "oMlv-sEborU" },
+      { titre: "Étirement Corps Entier", desc: "Étirements complets · Mobilité vertébrale et méridiens", duree: "~20 min", focus: "Colonne vertébrale", organes: "Du Mai · Méridiens tendinaux", niveau: "Débutant", id: "J3fevqiHYqg" },
+      { titre: "18 Mouvements Tai Ji", desc: "Enchaînement complet synthétisant Taijiquan et Qi Gong", duree: "~25 min", focus: "Toutes saisons · Programme général", organes: "12 méridiens · Équilibre Yin/Yang", niveau: "Débutant/Inter.", id: "bgfxk6kBbm0" },
+      { titre: "Rate & Estomac – Été Tardif", desc: "Été Tardif · Élément Terre · Rate, Estomac, Pancréas", duree: "~15 min", focus: "Été Tardif · Élément Terre", organes: "Rate · Estomac · Pancréas", niveau: "Intermédiaire", id: "fGpN9f0dwaM" },
+      { titre: "Foie & Vision – Printemps", desc: "Printemps · Foie · Vision · Enseignement complet", duree: "~45 min", focus: "Printemps · Élément Bois", organes: "Foie · Vésicule Biliaire · Yeux", niveau: "Intermédiaire", id: "NKgbZsCeGCc" },
+      { titre: "Purifier les Poumons – Automne", desc: "Enchaînement complet automne – Purification des poumons", duree: "~20 min", focus: "Automne · Élément Métal", organes: "Poumons · Gros Intestin", niveau: "Intermédiaire", id: "wwM5ru1f2xo" },
+      { titre: "Reins – Renforcer (1/2)", desc: "Hiver · Préserver le Qi des reins (1er mouvement)", duree: "~10 min", focus: "Hiver · Élément Eau", organes: "Reins · Essence Jing", niveau: "Intermédiaire", id: "UtNJVPUZGrs" },
+      { titre: "Reins – Préserver (2/2)", desc: "Hiver · Préserver le Qi des reins (2e mouvement)", duree: "~10 min", focus: "Hiver · Élément Eau", organes: "Reins · Vessie", niveau: "Intermédiaire", id: "LSX_oMLqxIo" }
+    ],
+    soir: [
+      { titre: "Sommeil Profond", desc: "4 exercices MTC · Troubles du sommeil liés aux Reins et au Cœur", duree: "~15 min", focus: "Soir · Apaisement Yin", organes: "Reins · Cœur", niveau: "Débutant", id: "atJ6zs3kI2I" },
+      { titre: "Détente & Apaisement", desc: "3 exercices · Respiration naturelle · Ralentir les rythmes", duree: "~10 min", focus: "Soir · Détente · Yin descendant", organes: "Triple Réchauffeur · Système nerveux", niveau: "Débutant", id: "Ho3PRJKxtbc" }
+    ],
+    massage: [
+      { titre: "Visage & Ventre", desc: "Zones réflexes du visage · Organes internes · Dantian", duree: "~15 min", focus: "Visage · Ventre · Dantian", organes: "Rate · Estomac · Foie · 5 sens", niveau: "Débutant", id: "9UwK47WxEXw" },
+      { titre: "Crâne, Nuque & Épaules", desc: "Auto-massage du crâne, du cou et des épaules", duree: "~15 min", focus: "Tête · Nuque · Épaules", organes: "Bai Hui · Du Mai · VB21", niveau: "Débutant", id: "vjl1SXe_xIk" },
+      { titre: "Stress, Émotions & Circulation", desc: "4 points d'acuponcture · Anti-stress · MTC", duree: "20 min", focus: "Stress · Émotions · Circulation", organes: "Rate-Estomac", niveau: "Débutant", id: "oS3NrgfhqNs" }
+    ],
+    complet: [
+      { titre: "Cours Intégral", desc: "Programme complet toutes saisons · corps entier", duree: "35–60 min", focus: "Programme complet · Toutes saisons", organes: "12 méridiens · Corps entier", niveau: "Débutant", id: "KjYhoAuGqUU" },
+      { titre: "Entretien des Fascias", desc: "10 manœuvres fasciales · Libérer tensions physiques, émotionnelles et énergétiques", duree: "45 min", focus: "Fascias · Corps entier", organes: "Fascias · Méridiens tendinaux · Système nerveux", niveau: "Débutant", id: "aIKk7PSxc5k" },
+      { titre: "Les Huit Pièces de Brocart", desc: "Méthode complète MTC – Accessible à tous", duree: "41 min", focus: "Ba Duan Jin · Toutes saisons", organes: "12 méridiens · Équilibre Yin/Yang", niveau: "Débutant", id: "hM_Gw6aGlJI" }
+    ]
+  };
+
+  let currentVideo = null;
+
+  function formatDate() {
+    const d = new Date();
+    const jours = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+    const mois = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+    return `${jours[d.getDay()]} ${d.getDate()} ${mois[d.getMonth()]} ${d.getFullYear()}`;
+  }
+
+  document.getElementById('dateDisplay').textContent = formatDate();
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js');
+  }
+
+  function selectCat(btn) {
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const cat = btn.dataset.cat;
+    const videos = DATA[cat];
+    const sel = document.getElementById('videoSelect');
+    sel.innerHTML = '<option value="">— Choisir une pratique —</option>';
+    videos.forEach((v, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = v.titre;
+      sel.appendChild(opt);
+    });
+
+    sel.dataset.cat = cat;
+    document.getElementById('videoSection').classList.add('visible');
+    document.getElementById('videoInfo').classList.remove('visible');
+    document.getElementById('playBtn').classList.remove('visible');
+    document.getElementById('playerWrap').classList.remove('visible');
+    document.getElementById('ytPlayer').src = '';
+    currentVideo = null;
+
+    document.getElementById('videoSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function selectVideo() {
+    const sel = document.getElementById('videoSelect');
+    const idx = sel.value;
+    if (idx === '') {
+      document.getElementById('videoInfo').classList.remove('visible');
+      document.getElementById('playBtn').classList.remove('visible');
+      document.getElementById('playerWrap').classList.remove('visible');
+      document.getElementById('ytPlayer').src = '';
+      return;
+    }
+
+    const cat = sel.dataset.cat;
+    const v = DATA[cat][idx];
+    currentVideo = v;
+
+    document.getElementById('vTitle').textContent = v.titre;
+    document.getElementById('vDesc').textContent = v.desc;
+    document.getElementById('vTags').innerHTML =
+      `<span class="tag">${v.duree}</span>` +
+      `<span class="tag">${v.focus}</span>` +
+      `<span class="tag">${v.organes}</span>` +
+      `<span class="tag">${v.niveau}</span>`;
+
+    document.getElementById('videoInfo').classList.add('visible');
+    document.getElementById('playBtn').classList.add('visible');
+    document.getElementById('playerWrap').classList.remove('visible');
+    document.getElementById('ytPlayer').src = '';
+  }
+
+  let ytPlayer = null;
+  let ytApiReady = false;
+
+  function loadYTApi() {
+    if (document.getElementById('yt-api-script')) return;
+    const tag = document.createElement('script');
+    tag.id = 'yt-api-script';
+    tag.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(tag);
+  }
+
+  window.onYouTubeIframeAPIReady = function() {
+    ytApiReady = true;
+  };
+
+  function launchVideo() {
+    if (!currentVideo) return;
+    document.getElementById('modalTitle').textContent = currentVideo.titre;
+    document.getElementById('endMessage').classList.remove('visible');
+    document.getElementById('modalOverlay').classList.add('visible');
+    document.body.style.overflow = 'hidden';
+
+    if (ytPlayer) {
+      ytPlayer.destroy();
+      ytPlayer = null;
+    }
+
+    const container = document.getElementById('ytPlayer');
+    container.innerHTML = '';
+    const div = document.createElement('div');
+    div.id = 'yt-iframe';
+    container.appendChild(div);
+
+    function createPlayer() {
+      ytPlayer = new YT.Player('yt-iframe', {
+        videoId: currentVideo.id,
+        playerVars: { autoplay: 1, rel: 0, playsinline: 1 },
+        events: {
+          onStateChange: function(e) {
+            if (e.data === YT.PlayerState.ENDED) {
+              document.getElementById('endMessage').classList.add('visible');
+            }
+          }
+        }
+      });
+    }
+
+    if (ytApiReady) {
+      createPlayer();
+    } else {
+      const check = setInterval(() => {
+        if (ytApiReady) { clearInterval(check); createPlayer(); }
+      }, 100);
+    }
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('visible');
+    document.getElementById('endMessage').classList.remove('visible');
+    if (ytPlayer) { ytPlayer.destroy(); ytPlayer = null; }
+    document.body.style.overflow = '';
+  }
+
+  loadYTApi();
+</script>
+
+</body>
+</html>
